@@ -1,3 +1,7 @@
+# Mimari yol haritası
+
+Mevcut çalışan pilot Node.js + SQLite kullanır. Kurulum ve güncel kapsam için [yerel kurulum](local-setup.md) esas alınmalıdır. Aşağıdaki PostgreSQL ve diğer modüller gelecek planıdır.
+
 # Mesai doğrulama tasarımı
 
 ## Bileşenler

@@ -1,54 +1,36 @@
 # Atölye Ekip — PersonelTakip
 
-Döner Atölyesi için iOS ve Android personel uygulaması. React Native + Expo + TypeScript.
+Döner Atölyesi için iOS/Android personel uygulaması ve kasa/yönetici web ekranı.
 
-## İlk çalıştırma (Windows)
+- Mobil: React Native, TypeScript, Expo SDK 57 (Expo Go client 57.0.9 ile uyumlu).
+- Sunucu: Node.js 24+, Express, SQLite; kullanıcılar, mesai, fotoğraflar ve oturumlar.
+- Kasa: 30 saniyede yenilenen QR. Personel: QR → 100 metre konum kontrolü → selfie → sunucuda kayıt.
+- Yönetici: personel/kasa hesabı oluşturma, kayıt listesi ve yetkili fotoğraf görüntüleme.
 
-Node.js LTS ve Git kurun. Terminalde:
+**[Windows kurulum ve telefon bağlantısı](docs/local-setup.md)**
+
+İlk açılışta uygulama örnek verilerle önizleme olarak çalışır. Gerçek kayıt için üstteki giriş alanından kurulmuş sunucuya bağlanın. Kurulmuş veya internette yayınlanmış bir sunucu bu depoyla otomatik oluşmaz.
+
+## Sadece tasarımı deneme
 
 ```powershell
-git clone https://github.com/lykia1/PersonelTakip.git
+git clone -b codex/mobile-foundation https://github.com/lykia1/PersonelTakip.git
 cd PersonelTakip/mobile
-npm ci
-npx expo start
-```
-
-Proje Expo SDK 57 kullanır; Expo Go SDK 57 ile açın (ör. client 57.0.9). Bilgisayar ve telefon aynı ağda olsun. iPhone Kamera uygulamasıyla terminaldeki Expo QR kodunu okutun. Bu **geliştirme QR kodudur**; kasanın mesai QR koduyla aynı değildir. Expo Go sürüm uyuşmazlığı bildirirse uygulamayı çalıştırmak için uyumlu geliştirme derlemesi gerekir.
-
-## Mevcut kurulumu güncelleme (PowerShell)
-
-Çalışan sunucuyu Ctrl+C ile durdurun.
-
-```powershell
-cd "$env:USERPROFILE\PersonelTakip\mobile"
-git pull --ff-only origin codex/mobile-foundation
 npm.cmd ci
-npx.cmd expo start --clear
+npx.cmd expo start
 ```
 
-`.cmd` komutları PowerShell script politikasını değiştirmeden çalışır.
-
-## Hazır olanlar
-
-- Antrasit/turuncu personel arayüzü; bugün, vardiya, geçmiş, profil sekmeleri.
-- Kamera izni ve QR tarama; ön planda konum izni ve GPS okuma.
-- Ön kamerayla anlık fotoğraf ve fotoğraf önizleme.
-- Hata/izin reddi ekranları, çift QR tarama kilidi.
-
-## Önemli: ilk sürüm önizlemedir
-
-Gösterilen vardiyalar ve istatistikler örnektir. Giriş, veritabanı, yönetici paneli ve kasa QR ekranı henüz yoktur. Gerçek mesai kaydı oluşturulmaz. Test için `personeltakip:test` metnini içeren QR kullanılabilir; bu biçim kontrolü güvenlik doğrulaması değildir. Konum okunur ancak dükkân koordinatları ve sunucu olmadığı için mesafe doğrulanmaz. Fotoğraf sunucuya gönderilmez; bu sürüm otomatik yüz doğrulaması yapmaz.
-
-## Sonraki aşama
-
-[Sunucu ve doğrulama tasarımı](docs/architecture.md). İşletmenin koordinatları, izin verilen yarıçap, vardiya kuralları ve performans ölçütleri yapılandırılmalıdır. Gizli anahtarları veya personel bilgilerini bu herkese açık depoya eklemeyin.
-
-## Kontrol
+## Kontroller
 
 ```powershell
-cd mobile
-npx tsc --noEmit
-npx expo install --check
+cd server
+npm.cmd ci
+npm.cmd test
+cd ../mobile
+npm.cmd ci
+npx.cmd tsc --noEmit
+npm.cmd run lint
+npx.cmd expo install --check
 ```
 
-Kamera ve GPS gerçek cihazda test edilmelidir.
+Kamera/GPS ve yerel ağ erişimi gerçek cihazda test edilmelidir. Vardiya, izin ve performans modülleri henüz tamamlanmadı. Fotoğraf kaydı otomatik yüz doğrulaması değildir. Gizli anahtar, şifre ve personel verilerini bu herkese açık depoya eklemeyin.

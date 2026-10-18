@@ -1,0 +1,50 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
+import sharp from 'sharp';
+import { createApp } from '../index.js';
+import { branch, hash, token, passwordHash, validateLocation } from '../core.js';
+const position=()=>({...branch,accuracy:5,timestamp:Date.now(),mocked:false});
+test('location checks fail closed',()=>{
+ assert.equal(validateLocation(position()),0);
+ for(const p of [{...position(),latitude:0},{...position(),timestamp:1},{...position(),accuracy:90},{...position(),mocked:true}])assert.throws(()=>validateLocation(p));
+});
+test('authenticated attendance lifecycle, isolation, expiry and replay',async()=>{
+ const folder=mkdtempSync(join(tmpdir(),'personel-test-'));const {app,db}=createApp(folder);const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base='http://127.0.0.1:'+server.address().port;
+ const request=async(path,auth,body)=>{const r=await fetch(base+'/api'+path,{method:body?'POST':'GET',headers:{...(auth?{Authorization:'Bearer '+auth}:{}),...(body instanceof FormData?{}:{'Content-Type':'application/json'})},body:body instanceof FormData?body:body?JSON.stringify(body):undefined});return {status:r.status,data:await r.json()};};
+ try{
+  const pass='a-long-test-password';for(const [name,role] of [['admin','admin'],['staff','employee'],['other','employee'],['kasa','kiosk']])db.prepare('INSERT INTO users(username,name,password,role) VALUES(?,?,?,?)').run(name,name,passwordHash(pass),role);
+  const login=async username=>(await request('/login',null,{username,password:pass})).data.token;
+  const admin=await login('admin'),staff=await login('staff'),other=await login('other'),kasa=await login('kasa');
+  assert.equal((await request('/admin/users',staff)).status,403);
+  assert.equal((await request('/me')).status,401);
+  assert.equal((await request('/kiosk/qr',staff,{})).status,403);
+  assert.equal((await request('/kiosk/qr',kasa,{})).status,200);
+  const qr=()=>{const raw=token();db.prepare('INSERT INTO challenges VALUES(?,?,?)').run(hash(raw),4,Date.now()+30000);return 'personeltakip:'+raw;};
+  assert.equal((await request('/attendance/prepare',staff,{qr:qr(),location:{...position(),latitude:0}})).status,400);
+  const expired=token();db.prepare('INSERT INTO challenges VALUES(?,?,?)').run(hash(expired),4,1);
+  assert.equal((await request('/attendance/prepare',staff,{qr:'personeltakip:'+expired,location:position()})).status,400);
+  const text=qr(),prepared=await request('/attendance/prepare',staff,{qr:text,location:position()});assert.equal(prepared.status,200);
+  assert.equal((await request('/attendance/prepare',staff,{qr:text,location:position()})).status,409);
+  const photo=await sharp({create:{width:10,height:10,channels:3,background:'#ff743d'}}).jpeg().toBuffer();const key=randomUUID();
+  const form=(attempt=prepared.data.attempt,requestKey=key,kind='in',image=photo)=>{const f=new FormData();for(const [k,v] of Object.entries({attempt,requestKey,kind,location:JSON.stringify(position())}))f.append(k,v);f.append('photo',new Blob([image]),'photo.jpg');return f;};
+  assert.equal((await request('/attendance',other,form())).status,400);
+  assert.equal((await request('/attendance',staff,form(prepared.data.attempt,key,'in',Buffer.from('not-image')))).status,400);
+  const saved=await request('/attendance',staff,form());assert.equal(saved.status,201);
+  const replay=await request('/attendance',staff,form());assert.equal(replay.status,200);assert.equal(replay.data.id,saved.data.id);
+  assert.equal(db.prepare('SELECT count(*) AS n FROM attendance').get().n,1);
+  assert.equal((await request('/me',staff)).data.active,true);assert.equal((await request('/me',other)).data.records.length,0);
+  assert.equal((await request('/admin/attendance',admin)).data.length,1);
+  const photoResponse=await fetch(base+'/api/admin/photos/'+saved.data.id,{headers:{Authorization:'Bearer '+staff}});assert.equal(photoResponse.status,403);
+  const second=await request('/attendance/prepare',staff,{qr:qr(),location:position()});
+  assert.equal((await request('/attendance',staff,form(second.data.attempt,randomUUID(),'in'))).status,409);
+  assert.equal((await request('/attendance',staff,form(second.data.attempt,randomUUID(),'out'))).status,409);
+  db.prepare('UPDATE attendance SET created=created-31000').run();
+  assert.equal((await request('/attendance',staff,form(second.data.attempt,randomUUID(),'out'))).status,201);
+  assert.equal((await request('/me',staff)).data.active,false);
+  await request('/logout',staff,{});assert.equal((await request('/me',staff)).status,401);
+ }finally{await new Promise(r=>server.close(r));db.close();rmSync(folder,{recursive:true,force:true});}
+});
