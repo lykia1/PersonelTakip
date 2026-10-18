@@ -1,0 +1,10 @@
+import { openDatabase, passwordHash } from './core.js';
+import { resolve } from 'node:path';
+const username = process.env.ADMIN_USERNAME || 'yonetici';
+const password = process.env.ADMIN_PASSWORD;
+if (!password || password.length < 12) throw new Error('ADMIN_PASSWORD en az 12 karakter olmalı. .env dosyasında belirleyin.');
+const db = openDatabase(resolve(process.env.DATA_DIR || './data'));
+if (db.prepare("SELECT id FROM users WHERE role='admin'").get()) throw new Error('Yönetici zaten var. Bu komut mevcut şifreyi değiştirmez.');
+db.prepare('INSERT INTO users(username,name,password,role) VALUES(?,?,?,?)').run(username, 'İşletme Yöneticisi', passwordHash(password), 'admin');
+console.log('Yönetici oluşturuldu:', username);
+db.close();

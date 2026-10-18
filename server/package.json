@@ -1,0 +1,1 @@
+{"name":"atolye-ekip-api","version":"0.2.0","private":true,"type":"module","engines":{"node":">=24"},"scripts":{"start":"node --env-file-if-exists=.env index.js","setup":"node --env-file-if-exists=.env setup.js","test":"node --test"},"dependencies":{"express":"^5.1.0","express-rate-limit":"^8.1.0","multer":"^2.0.2","qrcode":"^1.5.4","sharp":"^0.34.4","zod":"^4.1.0"}}
