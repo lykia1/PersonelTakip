@@ -13,7 +13,20 @@ npm ci
 npx expo start
 ```
 
-Telefona bu projenin Expo SDK sürümüyle uyumlu Expo Go yükleyin. Bilgisayar ve telefon aynı ağda olsun. iPhone Kamera uygulamasıyla terminaldeki Expo QR kodunu okutun. Bu **geliştirme QR kodudur**; kasanın mesai QR koduyla aynı değildir. Expo Go sürüm uyuşmazlığı bildirirse uygulamayı çalıştırmak için uyumlu geliştirme derlemesi gerekir.
+Proje Expo SDK 57 kullanır; Expo Go SDK 57 ile açın (ör. client 57.0.9). Bilgisayar ve telefon aynı ağda olsun. iPhone Kamera uygulamasıyla terminaldeki Expo QR kodunu okutun. Bu **geliştirme QR kodudur**; kasanın mesai QR koduyla aynı değildir. Expo Go sürüm uyuşmazlığı bildirirse uygulamayı çalıştırmak için uyumlu geliştirme derlemesi gerekir.
+
+## Mevcut kurulumu güncelleme (PowerShell)
+
+Çalışan sunucuyu Ctrl+C ile durdurun.
+
+```powershell
+cd "$env:USERPROFILE\PersonelTakip\mobile"
+git pull --ff-only origin codex/mobile-foundation
+npm.cmd ci
+npx.cmd expo start --clear
+```
+
+`.cmd` komutları PowerShell script politikasını değiştirmeden çalışır.
 
 ## Hazır olanlar
 
