@@ -35,7 +35,8 @@
           "locationWhenInUsePermission": "Mesai sırasında şubeye yakınlığını kontrol etmek için konum izni gerekir."
         }
       ],
-      "expo-router"
+      "expo-router",
+      "expo-secure-store"
     ],
     "scheme": "atolyeekip"
   }
